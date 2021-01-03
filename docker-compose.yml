@@ -5,7 +5,7 @@ services:
         container_name: "backend"
         ports:
             - 5000:5000
-        command: exec uvicorn backend.main:app --reload --host 0.0.0.0 --port 5000
+        command: uvicorn backend_app.main:app --reload --host 0.0.0.0 --port 5000
     frontend:
         build: .
         container_name: "frontend"
@@ -13,4 +13,4 @@ services:
             - 8000:8000
         depends_on:
           - backend
-        command: exec uvicorn frontend.main:app --reload --host 0.0.0.0 --port 8000
+        command: uvicorn frontend_app.main:app --reload --host 0.0.0.0 --port 8000
