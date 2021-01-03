@@ -1,0 +1,16 @@
+version: '2'
+services:
+    backend:
+        build: .
+        container_name: "backend"
+        ports:
+            - 5000:5000
+        command: exec uvicorn backend.main:app --reload --host 0.0.0.0 --port 5000
+    frontend:
+        build: .
+        container_name: "frontend"
+        ports:
+            - 8000:8000
+        depends_on:
+          - backend
+        command: exec uvicorn frontend.main:app --reload --host 0.0.0.0 --port 8000
