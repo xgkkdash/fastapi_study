@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
-from . import models, schemas
+from models import models
+from schemas import schemas
 
 
 def get_detail(db: Session, id: int):
