@@ -1,3 +1,5 @@
+import asyncio
+import functools
 import os
 import requests
 from typing import Optional
@@ -22,8 +24,9 @@ def get_db():
 
 
 @app.post("/kvpairs/", response_model=schemas.KvpairDetail)
-def create_kvpair(kvpair_detail: schemas.KvpairDetailCreate, db=Depends(get_db)):
-    db_kvpair = db.get_kvpair(key=kvpair_detail.key)
+async def create_kvpair(kvpair_detail: schemas.KvpairDetailCreate, db=Depends(get_db)):
+    loop = asyncio.get_event_loop()
+    db_kvpair = await loop.run_in_executor(None, db.get_kvpair, kvpair_detail.key)
     if db_kvpair:
         raise HTTPException(status_code=400, detail="key already existed")
     else:
@@ -31,15 +34,16 @@ def create_kvpair(kvpair_detail: schemas.KvpairDetailCreate, db=Depends(get_db))
             back_data = None
             backend_url = "http://backend:5000/details/"
             try:
-                backend_response = requests.post(backend_url,
-                                                 json={"id": kvpair_detail.id, "description": kvpair_detail.description})
+                param_json = {"id": kvpair_detail.id, "description": kvpair_detail.description}
+                backend_response = await loop.run_in_executor(None, functools.partial(requests.post, url=backend_url,
+                                                                                      json=param_json))
                 if backend_response.status_code == 200:
                     back_data = backend_response.json()
             except Exception as e:
                 print(e)
             if back_data:
                 front_result = Kvpair(kvpair_detail.key, kvpair_detail.value)
-                db.save_kvpair(front_result)
+                loop.run_in_executor(None, db.save_kvpair, front_result)
                 final_result = schemas.KvpairDetail(key=front_result.key, value=front_result.value,
                                                     id=back_data['id'], description=back_data['description'])
                 return final_result
@@ -47,23 +51,25 @@ def create_kvpair(kvpair_detail: schemas.KvpairDetailCreate, db=Depends(get_db))
                 raise HTTPException(status_code=400, detail="insert id/description failed")
         else:
             front_result = Kvpair(kvpair_detail.key, kvpair_detail.value)
-            db.save_kvpair(front_result)
+            loop.run_in_executor(None, db.save_kvpair, front_result)
             final_result = schemas.KvpairDetail(key=front_result.key, value=front_result.value)
             return final_result
 
 
 @app.get("/kvpairs/{key}", response_model=schemas.KvpairDetail)
-def read_kvpair(key: str, id: Optional[int] = 0,  db=Depends(get_db)):
+async def read_kvpair(key: str, id: Optional[int] = 0,  db=Depends(get_db)):
+    loop = asyncio.get_event_loop()
+    # TODO: use asyncio.tasks instead of run_in_executor to concurrently get db_kvpair and back_data
     back_data = None
     if id:
         backend_url = "http://backend:5000/details/" + str(id)
         try:
-            backend_response = requests.get(backend_url)
+            backend_response = await loop.run_in_executor(None, requests.get, backend_url)
             if backend_response.status_code == 200:
                 back_data = backend_response.json()
         except Exception as e:
             print(e)
-    db_kvpair = db.get_kvpair(key=key)
+    db_kvpair = await loop.run_in_executor(None, db.get_kvpair, key)
     if db_kvpair is None:
         raise HTTPException(status_code=404, detail="Key not found")
     else:

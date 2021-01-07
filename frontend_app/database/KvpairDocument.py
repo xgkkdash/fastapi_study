@@ -3,7 +3,7 @@ from models.kvpair import Kvpair
 
 
 class KvpairDocument(Document):
-    key = StringField(required=True)
+    key = StringField(required=True, unique=True)
     value = StringField(required=True)
     meta = {
         'collection': 'kvpairs',

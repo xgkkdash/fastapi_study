@@ -13,9 +13,9 @@ class MongoDatabase:
         doc = KvpairDocument.from_kvpair(kvpair)
         return doc.save()
 
-    def get_kvpair(self, **kwargs):
+    def get_kvpair(self, key):
         try:
-            doc = KvpairDocument.objects.get(**kwargs)
+            doc = KvpairDocument.objects.get(key=key)
             return doc.to_kvpair()
         except DoesNotExist:
             return None
