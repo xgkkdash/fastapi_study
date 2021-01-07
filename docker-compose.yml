@@ -12,6 +12,10 @@ services:
     frontend:
         build:
             context: ./frontend_app
+        environment:
+            - DB_NAME=front_prod
+            - DB_HOST=front_mongodb
+            - DB_PORT=27014
         container_name: "frontend"
         links:
             - "backend:backend_app"
@@ -20,5 +24,14 @@ services:
         ports:
             - 8000:8000
         depends_on:
-          - backend
+            - front_mongodb
+            - backend
         command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
+    front_mongodb:
+        image: "mongo"
+        container_name: "front_mongodb"
+        volumes:
+            - ./mongodb:/data/db
+        ports:
+            - 27014:27014
+        command: mongod --port 27014
