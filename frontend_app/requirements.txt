@@ -7,3 +7,5 @@ pytest
 decorator
 mongoengine
 asyncio
+motor
+aiohttp
